@@ -1,38 +1,36 @@
 import java.util.*;
-import java.lang.StringBuilder;
 
-class Node<E>{
+class Node{
     public int key;
-    public E value;
-    public Node<E> next;
-    public Node<E> prev;
+    public int value;
+    public Node next;
+    public Node prev;
 
-    public Node(int key, E value){
+    public Node(int key, int value){
         this.key = key; 
         this.value = value;
     }
 }
 
-interface DoublyLinkedList<E>{
-    public abstract void addFirst(Node<E> listNode);
-    public abstract void remove_node(Node<E> listNode);
-    public abstract void moveToHead(Node<E> listNode);
+interface DoublyLinkedList{
+    public abstract void addFirst(Node listNode);
+    public abstract void remove_node(Node listNode);
+    public abstract void moveToHead(Node listNode);
 }
 
 
 //Genericに後で変更
-class GenericDoublyLinkedList<E> implements DoublyLinkedList<E>{
-    public Node<E> head;
-    public Node<E> tail;
+class GenericDoublyLinkedList implements DoublyLinkedList{
+    public Node head;
+    public Node tail;
 
     public GenericDoublyLinkedList(){
         this.head = null;
         this.tail = null;
     }
-    
-    //これでO(capacity)になってしまうから、アルゴリズム的に未完成
-    public Node<E> search(int key){
-        Node<E> iterator = this.head;
+
+    public Node search(int key){
+        Node iterator = this.head;
         while (true){
             if (iterator.key == key) return iterator;
             iterator = iterator.next;
@@ -41,7 +39,7 @@ class GenericDoublyLinkedList<E> implements DoublyLinkedList<E>{
     }
 
     //先頭に挿入する
-    public void addFirst(Node<E> listNode){
+    public void addFirst(Node listNode){
         if (this.head == null){
             this.head = listNode;
             this.tail = listNode;
@@ -55,7 +53,7 @@ class GenericDoublyLinkedList<E> implements DoublyLinkedList<E>{
     }
 
     //消去する
-    public void remove_node(Node<E> listNode){
+    public void remove_node(Node listNode){
         if (listNode == this.tail){
             this.tail = this.tail.prev;
             this.tail.next = null;
@@ -71,96 +69,57 @@ class GenericDoublyLinkedList<E> implements DoublyLinkedList<E>{
     }
 
     //消去して、先頭に入れ直す
-    public void moveToHead(Node<E> listNode){
+    public void moveToHead(Node listNode){
         this.remove_node(listNode);
         this.addFirst(listNode);
     }
 }
 
-class genericLruCache<E>{
+class LruCache{
     public int capacity;
 
-    HashMap<Integer, E> keyindex = new HashMap<>();
-    GenericDoublyLinkedList<E> linkedList = new GenericDoublyLinkedList<E>();
+    HashMap<Integer, Integer> keyindex = new HashMap<>();
+    GenericDoublyLinkedList linkedListCache = new GenericDoublyLinkedList();
     
-    public genericLruCache(int capacity){
+    public LruCache(int capacity){
         this.capacity = capacity;
     }
 
-    public E get(int key){
+    public int get(int key){
         if (!this.keyindex.containsKey(key)){
-            return null;
+            return -1;
         }
         else {
-            this.linkedList.moveToHead(this.linkedList.search(key));
+            this.linkedListCache.moveToHead(this.linkedListCache.search(key));
             return this.keyindex.get(key);
         }
     }
 
-    public void put(int key, E value){
+    public void put(int key, int value){
         if (this.keyindex.containsKey(key)){
-            if (this.keyindex.get(key) != value){
-                this.keyindex.replace(key, value);
-                this.linkedList.remove_node(this.linkedList.search((key)));
-                this.linkedList.addFirst(new Node<E>(key, value));
-            }
-            else {
-                this.linkedList.moveToHead(this.linkedList.search(key));
-            }
+            this.linkedListCache.moveToHead(linkedListCache.search(key));
+            this.keyindex.replace(key, value);
         }
         else {
             this.keyindex.put(key, value);
-            this.linkedList.addFirst(new Node<E>(key, value));
+            this.linkedListCache.addFirst(new Node(key, value));
 
             if (this.keyindex.size() > capacity){
-                this.keyindex.remove(this.linkedList.tail.key, this.linkedList.tail.value);
-                this.linkedList.remove_node(this.linkedList.tail);
+                this.keyindex.remove(this.linkedListCache.tail.key, this.linkedListCache.tail.value);
+                this.linkedListCache.remove_node(this.linkedListCache.tail);
             }
         }
-    }
-
-    public String toString(){
-            StringBuilder str = new StringBuilder("[" + "|");
-        Node<E> iterator = this.linkedList.head;
-        while (iterator != null){
-            str.append(iterator.key + "," + iterator.value + "|");
-            iterator = iterator.next;
-        }
-        return str.toString() + "]";
     }
 }
 
 class Main{
     public static void main(String[] args){
-        //genericLruCache<Integer> integerLRU = new genericLruCache<Integer>(5);
-        //integerLRU.put(3,8);
-        //System.out.println(integerLRU);
-        //integerLRU.put(6,2);
-        //System.out.println(integerLRU);
-        //integerLRU.put(1,5);
-        //System.out.println(integerLRU);
-        //integerLRU.put(4,1);
-        //System.out.println(integerLRU);
-        //integerLRU.put(2,3);
-        //System.out.println(integerLRU);
-        //integerLRU.put(21,3);
-        //System.out.println(integerLRU);
-        //System.out.println(integerLRU.get(6));
-        //System.out.println(integerLRU);
-        
-
-        genericLruCache<Character> characterLRU = new genericLruCache<Character>(3);
-        characterLRU.put(2,'U');
-        System.out.println(characterLRU);
-        characterLRU.put(1,'B');
-        System.out.println(characterLRU);
-        characterLRU.put(4,'T');
-        System.out.println(characterLRU);
-        characterLRU.put(2,'E');
-        System.out.println(characterLRU);
-        characterLRU.put(32,'R');
-        System.out.println(characterLRU);
-        System.out.println(characterLRU.get(2));
-        System.out.println(characterLRU);
+        LruCache LRU = new LruCache(5);
+        LRU.put(3,8);
+        LRU.put(6,2);
+        LRU.put(1,5);
+        LRU.put(4,1);
+        LRU.put(2,3);
+        System.out.println(LRU.get(6));
     }
 }
