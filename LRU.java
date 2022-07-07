@@ -1,45 +1,29 @@
 import java.util.*;
+import java.lang.StringBuilder;
 
-class Node{
+class Node<E>{
     public int key;
-    public int value;
-    public Node next;
-    public Node prev;
+    public E value;
+    public Node<E> next;
+    public Node<E> prev;
 
-    public Node(int key, int value){
+    public Node(int key, E value){
         this.key = key; 
         this.value = value;
     }
 }
 
-interface DoublyLinkedList{
-    public abstract void addFirst(Node listNode);
-    public abstract void remove_node(Node listNode);
-    public abstract void moveToHead(Node listNode);
-}
+class LRUCache<E>{
+    protected HashMap<Integer, Node<E>> hashmap;
+    protected int capacity;
+    protected Node<E> head, tail;
 
-
-//Genericに後で変更
-class GenericDoublyLinkedList implements DoublyLinkedList{
-    public Node head;
-    public Node tail;
-
-    public GenericDoublyLinkedList(){
-        this.head = null;
-        this.tail = null;
+    public LRUCache(int capacity){
+        this.capacity = capacity;
+        hashmap = new HashMap<>();
     }
 
-    public Node search(int key){
-        Node iterator = this.head;
-        while (true){
-            if (iterator.key == key) return iterator;
-            iterator = iterator.next;
-        }
-        
-    }
-
-    //先頭に挿入する
-    public void addFirst(Node listNode){
+    public void addFirst(Node<E> listNode){
         if (this.head == null){
             this.head = listNode;
             this.tail = listNode;
@@ -52,8 +36,7 @@ class GenericDoublyLinkedList implements DoublyLinkedList{
         }
     }
 
-    //消去する
-    public void remove_node(Node listNode){
+    public void removeNode(Node<E> listNode){
         if (listNode == this.tail){
             this.tail = this.tail.prev;
             this.tail.next = null;
@@ -67,59 +50,70 @@ class GenericDoublyLinkedList implements DoublyLinkedList{
             listNode.next.prev = listNode.prev;
         }
     }
-
-    //消去して、先頭に入れ直す
-    public void moveToHead(Node listNode){
-        this.remove_node(listNode);
+    
+    public void moveToHead(Node<E> listNode){
+        this.removeNode(listNode);
         this.addFirst(listNode);
     }
-}
 
-class LruCache{
-    public int capacity;
-
-    HashMap<Integer, Integer> keyindex = new HashMap<>();
-    GenericDoublyLinkedList linkedListCache = new GenericDoublyLinkedList();
-    
-    public LruCache(int capacity){
-        this.capacity = capacity;
+    public E get(int key){
+        if (this.hashmap.containsKey(key)){
+            Node<E> node = this.hashmap.get(key);
+            E result = node.value;
+            moveToHead(node);
+            return result;
+        }
+        return null;
     }
 
-    public int get(int key){
-        if (!this.keyindex.containsKey(key)){
-            return -1;
+    public void put(int key, E value){
+        if (this.hashmap.containsKey(key)){
+            Node<E> node = hashmap.get(key);
+            node.value = value;
+            moveToHead(node);
         }
         else {
-            this.linkedListCache.moveToHead(this.linkedListCache.search(key));
-            return this.keyindex.get(key);
-        }
-    }
+            Node<E> node = new Node<E>(key, value);
+            this.hashmap.put(key, node);
+            addFirst(node);
 
-    public void put(int key, int value){
-        if (this.keyindex.containsKey(key)){
-            this.linkedListCache.moveToHead(linkedListCache.search(key));
-            this.keyindex.replace(key, value);
-        }
-        else {
-            this.keyindex.put(key, value);
-            this.linkedListCache.addFirst(new Node(key, value));
-
-            if (this.keyindex.size() > capacity){
-                this.keyindex.remove(this.linkedListCache.tail.key, this.linkedListCache.tail.value);
-                this.linkedListCache.remove_node(this.linkedListCache.tail);
+            if (this.hashmap.size() > capacity){
+                this.hashmap.remove(tail.key);
+                removeNode(tail);
             }
         }
+    }
+
+    public String toString(){
+        StringBuilder str = new StringBuilder("[");
+        Node<E> iterator = this.head;
+        while (iterator != null){
+            str.append("node(" + iterator.key + "," + iterator.value + "),");
+            iterator = iterator.next;
+        }
+        return str.toString() + "]";
     }
 }
 
 class Main{
     public static void main(String[] args){
-        LruCache LRU = new LruCache(5);
-        LRU.put(3,8);
-        LRU.put(6,2);
-        LRU.put(1,5);
-        LRU.put(4,1);
-        LRU.put(2,3);
-        System.out.println(LRU.get(6));
+       LRUCache<Integer> integerLru = new LRUCache<Integer>(5);
+       integerLru.put(3,8);
+       System.out.println(integerLru);
+       integerLru.put(4,21);
+       System.out.println(integerLru);
+       integerLru.put(56,8);
+       System.out.println(integerLru);
+       integerLru.put(1,8);
+       System.out.println(integerLru);
+       integerLru.put(89,8);
+       System.out.println(integerLru);
+       System.out.println(integerLru.get(4));
+       System.out.println(integerLru);
+       integerLru.put(9,8);
+       System.out.println(integerLru);
     }
 }
+
+
+
